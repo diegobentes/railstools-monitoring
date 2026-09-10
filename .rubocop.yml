@@ -1,0 +1,49 @@
+inherit_mode:
+  merge:
+    - Exclude
+
+AllCops:
+  TargetRubyVersion: 3.2
+  NewCops: enable
+  SuggestExtensions: false
+
+# O agente roda dentro do app de quem instalou: ele NÃO pode derrubar o processo por causa de um
+# erro nosso. Daí os `rescue StandardError` largos, sempre com log e sempre seguidos de `nil`.
+Lint/SuppressedException:
+  Enabled: false
+
+Metrics:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Layout/LineLength:
+  # 110 e não 80: os comentários deste código explicam decisão, e quebrar frase em 80 colunas
+  # deixa o texto pior de ler do que a linha longa.
+  Max: 110
+
+# O arquivo de entrada tem o nome DA GEM (`railstools-monitoring.rb`), com hífen: é o que o Bundler
+# exige ao fazer `require` a partir do nome da gem.
+Naming/FileName:
+  Exclude:
+    - lib/railstools-monitoring.rb
+
+# `install`, `run`, `store?`… vários destes devolvem booleano por acaso, não por serem perguntas.
+# Renomear com "?" mentiria sobre a intenção deles.
+Naming/PredicateMethod:
+  Enabled: false
+
+# `format("%-10s %s", ...)` na ajuda da linha de comando: token anotado ali só faria o alinhamento
+# ficar ilegível.
+Style/FormatStringToken:
+  Enabled: false
+
+# `set_action` e `set_namespace` são os nomes que quem vem do AppSignal já conhece. Renomear para
+# `action=` trocaria familiaridade por conformidade.
+Naming/AccessorMethodName:
+  Exclude:
+    - lib/railstools/monitoring/helpers/instrumentation.rb
