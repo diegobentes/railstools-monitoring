@@ -1,5 +1,11 @@
 # frozen_string_literal: true
 
+# Hoje o `transmitter.rb` já carrega as duas, e este arquivo só é alcançado depois dele. Mas quem
+# usa a constante declara a dependência: este é justamente o comando que se roda quando nada está
+# chegando, e ele quebrar com `NameError` seria o pior momento possível.
+require "net/http"
+require "uri"
+
 module Railstools
   module Monitoring
     module CLI
