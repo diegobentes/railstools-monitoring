@@ -60,6 +60,11 @@ bundle exec rubocop
   carregado antes ter pedido para a constante existir em todo o resto. O erro nasce na ordem de
   carga de quem instalou. `spec/bibliotecas_padrao_spec.rb` confere isso lendo o código-fonte.
 - **`Marker#deliver`, não `send`.** `send` é método do Object.
+- **Em Rails, a exceção do controller não sobe até o middleware.** O `ActionDispatch::ShowExceptions`
+  fica abaixo dele na pilha, desenha a página 500 e devolve resposta comum; o `rescue` do middleware
+  só pega o que escapa disso. O erro de verdade é lido de `env["action_dispatch.exception"]`,
+  respeitando `action_dispatch.report_exception`. A suíte roda sem Rails e não via isso: foi achado
+  ao instalar no VeloraOS, passando uma requisição que quebra pela pilha real do Rails 8.1.
 - **`Exception`, não `StandardError`, ao capturar erro de requisição e de transação**: um
   `SignalException` no meio de uma requisição é exatamente o que se quer saber.
 - **O teto de spans** (`Transaction::MAX_SPANS`) existe para o caso patológico — a requisição com

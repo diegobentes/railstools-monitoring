@@ -107,6 +107,49 @@ RSpec.describe Railstools::Monitoring::Rack::InstrumentationMiddleware do
     expect(dispatcher.traces.first[:http_status]).to eq(500)
   end
 
+  # Em Rails, quem responde pelo erro é o ShowExceptions, mais embaixo na pilha: a exceção vira
+  # página 500 e não sobe. O que chega aqui é uma resposta comum com a exceção guardada no env.
+  describe "erro que o Rails já transformou em resposta" do
+    def rails_response(error, status:, report: nil)
+      lambda do |env|
+        env["action_dispatch.exception"] = error
+        env["action_dispatch.report_exception"] = report unless report.nil?
+        [status, {}, ["página de erro"]]
+      end
+    end
+
+    it "pega o erro que virou página 500" do
+      dispatcher
+      app = rails_response(RuntimeError.new("quebrou no controller"), status: 500, report: true)
+
+      status, = described_class.new(app).call(env)
+
+      expect(status).to eq(500)
+      expect(dispatcher.errors.first[:exception_class]).to eq("RuntimeError")
+      expect(dispatcher.errors.first[:message]).to eq("quebrou no controller")
+    end
+
+    # Registro inexistente vira 404: o Rails decide não reportar, e o agente segue a decisão.
+    it "não reporta o que o Rails trata como resposta" do
+      dispatcher
+      app = rails_response(KeyError.new("não achei"), status: 404, report: false)
+
+      described_class.new(app).call(env)
+
+      expect(dispatcher.errors).to be_empty
+      expect(dispatcher.traces.first[:http_status]).to eq(404)
+    end
+
+    it "em Rails sem a decisão no env, reporta só o que deu 5xx" do
+      dispatcher
+
+      described_class.new(rails_response(RuntimeError.new("antigo"), status: 500)).call(env)
+      described_class.new(rails_response(KeyError.new("antigo"), status: 404)).call(env)
+
+      expect(dispatcher.errors.map { |error| error[:exception_class] }).to eq(["RuntimeError"])
+    end
+  end
+
   it "ação ignorada não vira nem métrica nem amostra" do
     dispatcher
     Railstools::Monitoring.config.ignore_actions = ["GET /up"]

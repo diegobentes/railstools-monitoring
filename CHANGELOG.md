@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1
+
+- Erro de controller em Rails passa a chegar ao Monitoring. O `ActionDispatch::ShowExceptions`
+  transforma a exceção em página 500 antes de ela subir até o middleware do agente, que via só o
+  status. Agora o agente lê a exceção que o Rails deixa no `env` e segue a mesma decisão de reportar
+  que o Rails usa: 404 de registro inexistente continua fora.
+
 ## 1.0.0
 
 Primeira versão.

@@ -36,6 +36,7 @@ module Railstools
 
           status, headers, body = @app.call(env)
           transaction.http_status = status
+          transaction.record_error(rescued_error(env, status))
           [status, headers, body]
         rescue Exception => e # rubocop:disable Lint/RescueException
           # `Exception`: um `SignalException` no meio de uma requisição também interessa, e ele não
@@ -77,6 +78,23 @@ module Railstools
           return nil if controller.nil? || action.nil?
 
           "#{camelize(controller)}Controller##{action}"
+        rescue StandardError
+          nil
+        end
+
+        # Em Rails, a exceção de um controller NÃO sobe até aqui. O `ActionDispatch::ShowExceptions`,
+        # bem mais embaixo na pilha, captura, desenha a página 500 e devolve uma resposta comum: o
+        # `rescue` do `call` nunca a vê. O que sobra dela está no `env`: a exceção e, desde o Rails
+        # 7.1, a decisão de reportar, que é a mesma que o Rails usa para o `Rails.error`. Ela é
+        # falsa para o que o Rails já trata como resposta: 404 de registro inexistente, 422 de
+        # token inválido.
+        def rescued_error(env, status)
+          error = env["action_dispatch.exception"]
+          return nil unless error.is_a?(Exception)
+
+          # Rails anterior ao 7.1 não escreve a decisão: vale o status.
+          report = env.fetch("action_dispatch.report_exception") { status.to_i >= 500 }
+          report ? error : nil
         rescue StandardError
           nil
         end
