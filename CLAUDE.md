@@ -55,6 +55,10 @@ bundle exec rubocop
   Já aconteceu com `String#first`; a suíte roda sem Rails carregado para pegar isso.
 - **A `logger` não é mais gem padrão no Ruby 4.0.** Está declarada no gemspec. Tirar de lá quebra em
   Ruby 4 e continua passando em Ruby 3.
+- **Biblioteca padrão se pede.** `net/http`, `zlib`, `stringio`, `socket`, `json` e
+  `securerandom` não vêm de graça, e o esquecimento não aparece na suíte: basta um arquivo
+  carregado antes ter pedido para a constante existir em todo o resto. O erro nasce na ordem de
+  carga de quem instalou. `spec/bibliotecas_padrao_spec.rb` confere isso lendo o código-fonte.
 - **`Marker#deliver`, não `send`.** `send` é método do Object.
 - **`Exception`, não `StandardError`, ao capturar erro de requisição e de transação**: um
   `SignalException` no meio de uma requisição é exatamente o que se quer saber.
